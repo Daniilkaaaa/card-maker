@@ -1,19 +1,31 @@
 import React, { createContext, useEffect, useRef, useState } from 'react';
 import { Editor, TextBox } from '../../types';
+import { useTypedSelector } from '../../redux/hooks/TypeSelector';
+import { useDispatch } from 'react-redux';
+import {
+  changeColorText,
+  changeFontFamily, changeFontSize,
+  changeFontWeight,
+  changePosition,
+  changeUnderline, deleteObject,
+  editText
+} from '../../redux/actionCreator';
 
 
 function TextBlock(props: {
   key: number,
   text: TextBox,
   textProperty: string,
+  setNone: () => void,
   action: string,
-  getTextData: (id: number, fontFamily: string) => void,
-  getBlockData: (x_: number, y_: number, id_: number, width: number, height: number) => void,
+  // getTextData: (id: number, fontFamily: string) => void,
+  // getBlockData: (x_: number, y_: number, id_: number, width: number, height: number) => void,
   widthScream: number,
   heightScream: number,
   onClick?: React.MouseEventHandler<HTMLDivElement> | undefined
 }) {
-
+  const state = useTypedSelector(state => state).editor;
+  const dispatch = useDispatch();
   const {pos, size, id} = props.text;
   const [value, setValue] = useState(props.text.value);
   const [filter, setFilter] = useState(props.text.filter)
@@ -66,7 +78,6 @@ function TextBlock(props: {
     if (!isDragging) return;
     const x = event.clientX - delta.x;
     const y = event.clientY - delta.y;
-    console.log(x, y);
     if (props.action === "none" && x > 270 && x < (1090 - size.width) && y > 35 && y < (660-size.height)) {
       setPosition({x,y});
     }
@@ -76,13 +87,51 @@ function TextBlock(props: {
 
   const handleMouseUp = () => {
     if (props.action === "none" || props.action === "delete") {
-      setIsDragging(false);
-      props.getBlockData(position.x, position.y, id, size.width, size.height);
+      if (props.action === "delete") {
+        dispatch(deleteObject(state, id));
+        console.log(state);
+      }
+      if (isDragging) {
+        dispatch(changePosition(state, id, position.x, position.y));
+        setIsDragging(false);
+      }
     }
-     if (props.action === "changeFontFamily" || props.action === "changeFontWeight" || props.action === "editText"
-       || props.action === "italicFont" || props.action === "underline" || props.action === "fontSize" || props.action === "changeColor") {
-       props.getTextData(id, props.textProperty);
-     }
+
+    if (props.action === "changeFontFamily") {
+      dispatch(changeFontFamily(state, id, props.textProperty));
+      console.log(state);
+    }
+
+    if (props.action === "changeFontWeight") {
+      dispatch(changeFontWeight(state, id, props.textProperty));
+      console.log(state);
+    }
+
+    if (props.action === "editText") {
+      dispatch(editText(state, id, props.textProperty));
+      console.log(state);
+    }
+
+    if (props.action === "italicFont") {
+      dispatch(editText(state, id, props.textProperty));
+      console.log(state);
+    }
+
+    if (props.action === "underline") {
+      dispatch(changeUnderline(state, id, props.textProperty));
+      console.log(state);
+    }
+
+    if (props.action === "fontSize") {
+      dispatch(changeFontSize(state, id, props.textProperty));
+      console.log(state);
+    }
+
+    if (props.action === "changeColor") {
+      dispatch(changeColorText(state, id, props.textProperty));
+      console.log(state);
+    }
+    props.setNone();
   };
   return (
     <div
@@ -98,7 +147,6 @@ function TextBlock(props: {
         fontStyle: italic,
         fontWeight: fontWeight,
         fontFamily: fontFamily,
-        // lineHeight: (fontSize + 10)+'px',
         top: position.y,
         left: position.x,
         textDecoration: underline,

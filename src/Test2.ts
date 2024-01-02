@@ -53,8 +53,8 @@ const sizeC: Size = {
 //   objects: [rectangle],
 // }
 
-const canva1: Canvas = {
-  size: size1,
+const canva: Canvas = {
+  //size: size1,
   objects: []
 }
 
@@ -63,11 +63,12 @@ const canva1: Canvas = {
 //   events: [canva, canva1],
 // }
 
-// const editor: Editor = {
-//   name: "card",
-//   canvas: canva,
-//   history: history,
-// }
+const editor: Editor = {
+  name: "card",
+  canvas: canva,
+  history: [],
+}
+export {editor}
 // console.log("Арт-объект: ", rectangle);
 // console.log("Холст: ", canva);
 // console.log("Эдитор: ", editor);

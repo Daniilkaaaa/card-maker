@@ -1,15 +1,19 @@
 import React, { useRef, useState } from 'react';
 import { ArtObject } from '../../types';
+import { useTypedSelector } from '../../redux/hooks/TypeSelector';
+import { useDispatch } from 'react-redux';
+import { changePosition, changeSize, deleteObject } from '../../redux/actionCreator';
 
 function FigureBlock(props: {
   figure: ArtObject,
   isDelete: boolean,
+  setNone: () => void,
   action: string,
-  getBlockData: (x_: number, y_: number, id_: number, width: number, height: number) => void;
-  //isSelected: boolean,
   filter?: string,
   onClick?: React.MouseEventHandler<SVGSVGElement> | undefined
 }) {
+  const state = useTypedSelector(state => state).editor;
+  const dispatch = useDispatch();
   const {pos, size, figure, color, id} = props.figure
   const x = pos.x;
   const y = pos.y;
@@ -40,7 +44,6 @@ function FigureBlock(props: {
 
   const handleMouseMove = (event: React.MouseEvent) => {
     if (isResizing) {
-      console.log(1);
       const newWidth = width + event.clientX - prevX.current;
       const newHeight = height + event.clientY - prevY.current;
       setWidth(newWidth);
@@ -49,7 +52,9 @@ function FigureBlock(props: {
       prevY.current = event.clientY;
     }
     if (!isDragging) return;
-    if (props.action === "none") {
+    const x = event.clientX - delta.x;
+    const y = event.clientY - delta.y;
+    if (props.action === "none" && x > 278 && x < (1077 - size.width) && y > 39 && y < (640-size.height)) {
       setPosition({
         x: event.clientX - delta.x,
         y: event.clientY - delta.y,
@@ -58,9 +63,19 @@ function FigureBlock(props: {
   };
 
   const handleMouseUp = () => {
-    setIsDragging(false);
-    setIsResizing(false);
-    props.getBlockData(position.x, position.y, id, width, height);
+    if (isResizing) {
+      dispatch(changeSize(state, id, width, height));
+      setIsResizing(false);
+    }
+    if (isDragging) {
+      dispatch(changePosition(state, id, position.x, position.y));
+      setIsDragging(false);
+      console.log(state);
+    }
+    if (props.action === "delete") {
+      dispatch(deleteObject(state, id));
+      console.log(state);
+    }
   };
   let figureNow = null
   if (figure === 'circle') {
@@ -70,7 +85,6 @@ function FigureBlock(props: {
         cy={(height / 2)}
         r={(width / 2)}
         fill={color.hex}
-        // strokeWidth={2 * scalePercent}
       />
     )
   }
@@ -105,7 +119,6 @@ function FigureBlock(props: {
         top: position.y,
         width: width,
         height: height,
-        //border: props.isSelected ? '2px solid blue' : 'none',
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

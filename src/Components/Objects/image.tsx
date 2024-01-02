@@ -1,11 +1,13 @@
 import React, { useRef, useState } from 'react';
 import { Picture } from '../../types';
+import { changePosition, changeSize, deleteObject } from '../../redux/actionCreator';
+import { useTypedSelector } from '../../redux/hooks/TypeSelector';
+import { useDispatch } from 'react-redux';
 
 function ImageBlock(props: {
   image: Picture,
   action: string,
-  getBlockData: (x_: number, y_: number, id_: number, width: number, height: number) => void;
-  //isSelected: boolean,
+  setNone: () => void,
   filter?: string,
 
   onClick?: React.MouseEventHandler<HTMLDivElement> | undefined
@@ -13,6 +15,8 @@ function ImageBlock(props: {
   if (props.onClick != undefined) {
     console.log("Вы выбрали картинку");
   }
+  const state = useTypedSelector(state => state).editor;
+  const dispatch = useDispatch();
   const {pos, size, path, id} = props.image;
   const x = pos.x;
   const y = pos.y;
@@ -43,7 +47,6 @@ function ImageBlock(props: {
 
   const handleMouseMove = (event: React.MouseEvent) => {
     if (isResizing) {
-      console.log(1);
       const newWidth = width + event.clientX - prevX.current;
       const newHeight = height + event.clientY - prevY.current;
       setWidth(newWidth);
@@ -52,18 +55,28 @@ function ImageBlock(props: {
       prevY.current = event.clientY;
     }
     if (!isDragging) return;
-    if (props.action === "none") {
-      setPosition({
-        x: event.clientX - delta.x,
-        y: event.clientY - delta.y,
-      });
+    const x = event.clientX - delta.x;
+    const y = event.clientY - delta.y;
+    if (props.action === "none" && x > 278 && x < (1077 - size.width) && y > 39 && y < (640-size.height)) {
+      setPosition({x, y});
     }
   };
 
   const handleMouseUp = () => {
-    setIsDragging(false);
-    setIsResizing(false);
-    props.getBlockData(position.x, position.y, id, width, height);
+    if (isResizing) {
+      dispatch(changeSize(state, id, width, height));
+      setIsResizing(false);
+    }
+    if (isDragging) {
+      dispatch(changePosition(state, id, position.x, position.y));
+      setIsDragging(false);
+      console.log(state);
+    }
+    if (props.action === "delete") {
+      dispatch(deleteObject(state, id));
+      console.log(state);
+    }
+    // props.getBlockData(position.x, position.y, id, width, height);
   };
   return (
     <div

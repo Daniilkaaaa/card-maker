@@ -4,33 +4,38 @@ import { CanvasView } from './CanvasView';
 import styles from "./EditorView.module.css"
 import { Scrim } from './Scrim';
 import { saveObjectAsJsonFile } from './Actions/ExportToJSON';
-import { AddText } from './Actions/AddText';
+import { CreateText } from './Actions/CreateText';
 import { AddObject } from './Actions/AddObject';
 import { render } from 'react-dom';
 import ReactDOM from 'react-dom/client';
-import { AddCircle } from './Actions/AddCircle';
-import { AddRectangle } from './Actions/AddRectangle';
-import { AddTriangle } from './Actions/AddTriangle';
+import { CreateCircle } from './Actions/CreateCircle';
+import { CreateRectangle } from './Actions/CreateRectangle';
+import { CreateTriangle } from './Actions/CreateTriangle';
 import { DeleteObject } from './Actions/DeleteObject';
-import { AddImage } from './Actions/AddImage';
+import { CreateImage } from './Actions/CreateImage';
+import { useDispatch, useSelector } from 'react-redux';
+import { useTypedSelector } from '../redux/hooks/TypeSelector';
+import { addObject, deleteObject, updateEditor } from '../redux/actionCreator';
+import { UpdateEditor } from '../redux/hooks/UpdateEditor';
 
 function EditorView(props: {
   editor: Editor;
   scale?: number;
   onClick?: React.MouseEventHandler<HTMLDivElement> | undefined;
 }) {
+  const state = useTypedSelector(state => state).editor;
+  const dispatch = useDispatch();
   const [id, setId] = useState(1);
   const [src, setSrc] = useState("");
   const [isDelete, setIsDelete] = useState(false);
   const [addingState, setAddingState] = useState("none");
   const [myData, setMyData] = useState<Editor | null>();
-  const [editor, setEditor] = useState(props.editor);
   const [action, setAction] = useState("none");
   const widthScrim = 800;
   const heightScrim = 600;
 
   const downloadClick = () => {
-    saveObjectAsJsonFile(editor, 'sample.json');
+    saveObjectAsJsonFile(state, 'sample.json');
   };
   const [textData, setTextData] = useState("");
   const [textIsEditing, setTextIsEditing] = useState(false);
@@ -44,11 +49,9 @@ function EditorView(props: {
   const [visibleText, setVisibleText] = useState(false);
   const [visibleColor, setVisibleColor] = useState(false);
   const [visibleFigure, setVisibleFigure] = useState(false);
-  const [visibleFiltres, setVisibleFiltres] = useState(false);
 
   function handleTextChange(event: ChangeEvent<HTMLInputElement>) {
     setTextData(event.target.value);
-    console.log(textData);
   }
   function editClick() {
     setTextIsEditing(true);
@@ -121,20 +124,13 @@ function EditorView(props: {
   function toggleContentTextVisibility() {
     setVisibleText(!visibleText);
     setVisibleFigure(false);
-    setVisibleFiltres(false);
   }
 
   function toggleContentFiguresVisibility() {
     setVisibleFigure(!visibleFigure);
     setVisibleText(false);
-    setVisibleFiltres(false);
   }
 
-  function toggleContentFiltresVisibility() {
-    setVisibleFiltres(!visibleFiltres);
-    setVisibleText(false);
-    setVisibleFigure(false);
-  }
 
   const inputRef = useRef<HTMLInputElement>(null);
   const changeImageClick = () => {
@@ -165,11 +161,6 @@ function EditorView(props: {
 
   function changeSize() {
     setAction("changeSize");
-  }
-  function deleting(id: number) {
-    setEditor(DeleteObject(editor, id));
-    setIsDelete(false);
-    setAction("none");
   }
 
   function setNone() {
@@ -202,17 +193,18 @@ function EditorView(props: {
   };
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const myData = JSON.parse(reader.result as string) as Editor;
-        // let editor = myData;
-        // console.log(editor);
-        setEditor(myData);
-        // console.log(editor);
+        // const myData = JSON.parse(reader.result as string) as Editor;
+        dispatch(updateEditor(JSON.parse(reader.result as string) as Editor));
+        console.log(updateEditor(JSON.parse(reader.result as string) as Editor));
+        // if (myData != null) {
+        //   dispatch(updateEditor(myData));
+        //   console.log(myData);
+        //   console.log(state);
+        // }
       } catch (error) {
         console.error(error);
       }
@@ -220,14 +212,6 @@ function EditorView(props: {
     reader.readAsText(file);
   }
 
-  useEffect(() => {
-    if (myData != null) {
-      setEditor(myData as Editor);
-      console.log(editor);
-    }
-  }, [myData]);
-
-  const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   function courierNewFont() {
     setAction("changeFontFamily");
     setTextProperty("Courier New")
@@ -338,26 +322,26 @@ function EditorView(props: {
     setId(id+1);
     let object;
     if (addingState == "text") {
-      object = AddText(x,y,id);
+      object = CreateText(x,y,id);
     }
     if (addingState === "image") {
-      object = AddImage(base64Image as string,x, y, id);
+      object = CreateImage(base64Image as string,x, y, id);
     }
     if (addingState == "circle") {
-      object = AddCircle(x, y, id);
+      object = CreateCircle(x, y, id);
     }
     if (addingState == "rectangle") {
-      object = AddRectangle(x, y, id);
+      object = CreateRectangle(x, y, id);
     }
     if (addingState == "triangle") {
-      object = AddTriangle(x,y, id);
+      object = CreateTriangle(x,y, id);
     }
     if (addingState != "none") {
-      setEditor(AddObject(editor, object));
+      dispatch(addObject(state, object));
       setAddingState("none")
     }
   }
-  const {name, history, canvas} = editor
+  const {name, history, canvas} = state
   return (
     <body>
     <div className={"main"}>
@@ -443,7 +427,7 @@ function EditorView(props: {
         </div>
       </div>
       <div>
-          <CanvasView canvas={canvas} isDelete={isDelete} deleting={deleting} action={action} stopChangingSize={stopChangingSize} textProperty={textProperty} setNone={setNone} widthScream={widthScrim} heightScream={heightScrim}></CanvasView>
+          <CanvasView canvas={canvas} isDelete={isDelete} action={action} stopChangingSize={stopChangingSize} textProperty={textProperty} setNone={setNone} widthScream={widthScrim} heightScream={heightScrim}></CanvasView>
       </div>
     </div>
     </body>

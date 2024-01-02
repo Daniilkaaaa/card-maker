@@ -119,12 +119,12 @@ const sizeC: Size = {
 
 
 const canva: Canvas = {
-    size: sizeC,
+    //size: sizeC,
     objects: [],
 }
 
 let canva1: Canvas = {
-    size: size1,
+    //size: size1,
     objects: []
 }
 

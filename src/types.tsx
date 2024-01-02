@@ -53,7 +53,7 @@ type ArtObject = CardObject & {
 }
 
 type Canvas = {
-  size: Size;
+  //size: Size;
   objects: Array<TextBox|Picture|ArtObject>;
 
 }
